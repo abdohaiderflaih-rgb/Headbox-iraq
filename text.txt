@@ -1,0 +1,63 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local HEAD_SIZE = 20
+local HEAD_COLOR = Color3.fromRGB(255, 0, 0)
+local TRANSPARENCY = 0.3
+
+local function setupCharacter(player, char)
+    if player == LocalPlayer then return end
+
+    local head = char:FindFirstChild("Head")
+    local humanoid = char:FindFirstChild("Humanoid")
+    if not head or not humanoid then return end
+
+    -- hide head
+    head.Transparency = 1
+    for _,v in ipairs(head:GetChildren()) do
+        if v:IsA("Decal") then
+            v.Transparency = 1
+        end
+    end
+
+    -- enlarge real hitbox
+    head.Size = Vector3.new(HEAD_SIZE, HEAD_SIZE, HEAD_SIZE)
+    head.CanCollide = false
+    head.Massless = true
+
+    -- remove old
+    if head:FindFirstChild("Headbox") then
+        head.Headbox:Destroy()
+    end
+
+    -- create visual box (no ESP)
+    local box = Instance.new("BoxHandleAdornment")
+    box.Name = "Headbox"
+    box.Adornee = head
+    box.Size = Vector3.new(HEAD_SIZE, HEAD_SIZE, HEAD_SIZE)
+    box.Color3 = HEAD_COLOR
+    box.Transparency = TRANSPARENCY
+    box.AlwaysOnTop = false -- هذا المهم (بدون ESP)
+    box.Parent = head
+
+    -- hide instantly on death
+    humanoid.Died:Connect(function()
+        box.Visible = false
+    end)
+end
+
+local function onPlayer(player)
+    if player.Character then
+        setupCharacter(player, player.Character)
+    end
+    player.CharacterAdded:Connect(function(char)
+        task.wait(0.2)
+        setupCharacter(player, char)
+    end)
+end
+
+for _,p in ipairs(Players:GetPlayers()) do
+    onPlayer(p)
+end
+
+Players.PlayerAdded:Connect(onPlayer)
